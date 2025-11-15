@@ -1,5 +1,6 @@
 import { Injectable, ConflictException, InternalServerErrorException } from '@nestjs/common';
 import { CreateUserDto } from 'src/dto/create-user.dto';
+import { RegisterResponseDto } from 'src/dto/register-response.dto';
 import { PrismaService } from 'src/prisma.service';
 import { Prisma } from '@prisma/client';
 
@@ -8,7 +9,7 @@ export class UsersService {
 
     constructor(private prisma: PrismaService) { }
     
-    async register(data: CreateUserDto) {
+    async register(data: CreateUserDto): Promise<RegisterResponseDto> {
         // Check for duplicate email
         const existingUserByEmail = await this.prisma.user.findUnique({
             where: { email: data.email },
@@ -28,7 +29,7 @@ export class UsersService {
         }
 
         try {
-            return await this.prisma.user.create({
+            await this.prisma.user.create({
                 data: {
                     firstname: data.firstname,
                     lastname: data.lastname,
@@ -39,6 +40,12 @@ export class UsersService {
                     active: data.active ?? true,
                 },
             });
+
+            return {
+                statusCode: 201,
+                message: 'User registered successfully',
+                status: 'success',
+            };
         } catch (error) {
             if (error instanceof ConflictException) {
                 throw error;
